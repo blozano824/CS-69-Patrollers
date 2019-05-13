@@ -113,7 +113,10 @@ class Graph(object):
         return res
 
     def a_star(self, start_vertex, end_vertex):
-        """Returns a list of tuples as a path from the given start to the given end in the given maze"""
+        """
+        Returns a list of vertex names as a path from
+        the given start vertex to the given end vertex.
+        """
 
         # Create start and end node
         start_node = Node(None, start_vertex)
