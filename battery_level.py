@@ -17,32 +17,31 @@ NUM_ROBOTS = 10
 class battery_level:
 
     def __init__(self):
-        self.robot_odom = {}
-        self.battery_level = {}
+        self.robot_name = ""
+        self.robot_odom = None
+        self.battery_level = 0
         self.battery_string = ""
         self.pub = rospy.Publisher("battery_level", String, queue_size=10)
 
+    def get_robot_name(self):
+        self.robot_name = rospy.get_namespace()
+
     def base_vel_truth(self, odom_msg):
-        robot_name = odom_msg.header.frame_id.split("/")[1]
-        self.robot_odom[robot_name] = odom_msg
+        self.robot_odom = odom_msg
 
     def subscriber(self):
-        for i in range(NUM_ROBOTS):
-            rospy.Subscriber("/robot_" + str(i) + "/base_pose_ground_vel_truth", Odometry, self.base_vel_truth)
+        rospy.Subscriber("/robot_" + self.robot_name + "/base_pose_ground_vel_truth", Odometry, self.base_vel_truth)
 
     def init_batttery(self):
-        for robot in self.robot_odom.keys():
-            self.battery_level[robot] = 100
+        self.battery_level = 100
 
     def adjust_battery(self):
-        for robot in self.robot_odom.keys():
-            if self.robot_odom[robot].twist.twist.linear.x > 0 or self.robot_odom[robot].twist.twist.angular.z:
-                self.battery_level[robot] = self.battery_level[robot] - self.robot_odom[robot].twist.twist.linear.x
-                self.battery_level[robot] = self.battery_level[robot] - self.robot_odom[robot].twist.twist.angular.z
+        if self.robot_odom.twist.twist.linear.x != 0 or self.robot_odom.twist.twist.angular.z != 0:
+            self.battery_level = self.battery_level - math.abs(self.robot_odom.twist.twist.linear.x)
+            self.battery_level = self.battery_level - math.abs(self.robot_odom.twist.twist.angular.z)
 
     def update_battery_level(self):
-        for robot in self.robot_odom.keys():
-            self.battery_string = self.battery_string + robot + "/" + str(self.battery_level[robot]) + " "
+        self.battery_string = self.robot_name + "/" + str(self.battery_level)
 
         self.pub.publish(self.battery_string)
 
