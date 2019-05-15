@@ -2,6 +2,6 @@
 <launch>
   <arg name="robot_name" />
   <group ns="$(arg robot_name)">
-    <node pkg="patroller" type="battery_level.py" name="battery_level" output="screen" />
+    <node pkg="patrollers" type="battery_level.py" name="battery_level" output="screen" />
   </group>
 </launch>
