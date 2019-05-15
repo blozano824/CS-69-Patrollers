@@ -1,52 +1,52 @@
 #!/usr/bin/python
 
-#import python libs
-import numpy
-import math
-
-# import ros libs
 import rospy
-import tf
-# import messages
 from nav_msgs.msg import Odometry
-from std_msgs.msg import String
+from std_msgs.msg import String, Bool
 
-#can figure out how to deal with this later
-NUM_ROBOTS = 10
 
-class battery_level:
+class BatteryLevel:
 
     def __init__(self):
-        self.robot_name = ""
-        self.robot_odom = None
-        self.battery_level = 0
-        self.battery_string = ""
-        self.pub = rospy.Publisher("battery_level", String, queue_size=10)
+        self.robot_linear_velocity = None
+        self.robot_rotational_velocity = None
+        self.charging = False
+        self.battery_level = 100.0
+        self.publisher = rospy.Publisher("battery_level", String, queue_size=10)
 
-    def get_robot_name(self):
-        self.robot_name = rospy.get_namespace()
+        rospy.init_node("battery_level")
 
-    def base_vel_truth(self, odom_msg):
-        self.robot_odom = odom_msg
+    def subscribe(self):
+        rospy.Subscriber("base_pose_ground_vel_truth", Odometry, self.store_robot_velocities)
+        rospy.Subscriber("charging", Bool, self.store_robot_charging)
 
-    def subscriber(self):
-        rospy.Subscriber("/robot_" + self.robot_name + "/base_pose_ground_vel_truth", Odometry, self.base_vel_truth)
+    def store_robot_charging(self, str_msg):
+        self.charging = str_msg.data
 
-    def init_batttery(self):
-        self.battery_level = 100
-
-    def adjust_battery(self):
-        if self.robot_odom.twist.twist.linear.x != 0 or self.robot_odom.twist.twist.angular.z != 0:
-            self.battery_level = self.battery_level - math.abs(self.robot_odom.twist.twist.linear.x)
-            self.battery_level = self.battery_level - math.abs(self.robot_odom.twist.twist.angular.z)
+    def store_robot_velocities(self, odom_msg):
+        self.robot_linear_velocity = odom_msg.twist.twist.linear.x
+        self.robot_rotational_velocity = odom_msg.twist.twist.angular.z
+        self.update_battery_level()
+        self.publish_battery_level()
 
     def update_battery_level(self):
-        self.battery_string = self.robot_name + "/" + str(self.battery_level)
+        self.battery_level -= abs(self.robot_linear_velocity) * 0.0001
+        self.battery_level -= abs(self.robot_rotational_velocity) * 0.0001
+        if self.charging is True:
+            self.battery_level += 0.01
 
-        self.pub.publish(self.battery_string)
+    def publish_battery_level(self):
+        str_msg = String()
+        str_msg.data = str(self.battery_level)
+        self.publisher.publish(str_msg)
 
-def main():
-    rospy.init_node("battery_level")
+    def monitor(self):
+        while not rospy.is_shutdown():
+            print(str(self.battery_level))
+        rospy.spin()
+
 
 if __name__ == '__main__':
-    main()
+    battery_level = BatteryLevel()
+    battery_level.subscribe()
+    battery_level.monitor()
