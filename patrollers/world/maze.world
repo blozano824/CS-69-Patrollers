@@ -27,25 +27,41 @@ window
   scale 60
 )
 
-floorplan
-(
-  name "maze"
-  bitmap "maze.png"
-  size [ 30.0 30.0 2.0 ]
-  pose [  5.0  5.0 0.0 0.0 ]
-)
+#floorplan
+#(
+#  name "maze"
+#  bitmap "maze.png"
+#  size [ 30.0 30.0 2.0 ]
+#  pose [  0.0  5.0 0.0 0.0 ]
+#)
 
 # throw in a robot
 turtlebot
 (
-  pose [ 2.0 2.0 0.0 0.0 ]
+  pose [ -5.0 -10.0 0.0 0.0 ]
   name "robot_0"
-  color "black"
+  color "yellow"
 )
 
 turtlebot
 (
-  pose [ 0.0 2.0 0.0 0.0 ]
+  pose [ -2.5 -10.0 0.0 0.0 ]
   name "robot_1"
-  color "black"
+  color "red"
 )
+
+turtlebot
+(
+  pose [ 2.5 -10.0 0.0 0.0 ]
+  name "robot_2"
+  color "green"
+)
+
+
+turtlebot
+(
+  pose [ 5.0 -10.0 0.0 0.0 ]
+  name "robot_3"
+  color "blue"
+)
+

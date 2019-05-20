@@ -22,6 +22,17 @@ define turtlebot position
   gui_nose 1
   drive "diff"
   color "gray"
-  
+  block
+      (
+            points 6
+            point[5] [0 0]
+            point[4] [0 1]
+            point[3] [0.75 1]
+            point[2] [1 0.75]
+            point[1] [1 0.25]
+            point[0] [0.75 0]
+            z [0 1]
+      )
+
   kinect(pose [ -0.1 0.0 -0.11 0.0 ])
 )

@@ -27,7 +27,7 @@ class Patroller:
         self.searching = True
 
         # Speed Variables
-        self.turn_speed = 0.5
+        self.turn_speed = 0.4
         self.move_speed = 1
 
         # Position Variables
@@ -36,7 +36,7 @@ class Patroller:
         self.current_direction = None
 
         # Target Position Variables
-        self.target_error = 0.2
+        self.target_error = 0.1
         self.target_x = None
         self.target_y = None
         self.target_direction = None
@@ -67,7 +67,7 @@ class Patroller:
     def store_incoming_target_msg(self, target_msg):
         target_location = target_msg.data.split(",")
         self.target_x, self.target_y = float(target_location[0]), float(target_location[1])
-        # print(self.target_x, self.target_y)
+        print(self.target_x, self.target_y)
         self.target_direction = math.atan2(self.target_y - self.current_y, self.target_x - self.current_x) * 180 / math.pi
         if self.target_direction < 0:
             self.target_direction = 360 + self.target_direction
@@ -88,7 +88,7 @@ class Patroller:
             cmd_msg = Twist()
 
             if curr_state == "AWAIT":
-                if self.target_x and self.target_y:
+                if self.target_direction:
                     curr_state = "PATROL"
                     patrol_state = "START"
 
@@ -101,17 +101,27 @@ class Patroller:
                 if patrol_state == "CALCULATE_TURN_TIME":
                     # TODO Calculate angle difference between current position and target position
                     angle_diff = self.target_direction - self.current_direction
+                    if angle_diff > 180:
+                        angle_diff = -1 * (360 - angle_diff)
                     radian_diff = angle_diff * math.pi / 180
+
+                    if radian_diff < 0:
+                        self.turn_speed = -1 * abs(self.turn_speed)
+                    else:
+                        self.turn_speed = abs(self.turn_speed)
+
                     self.turn_duration = radian_diff / self.turn_speed
+
                     self.timestamp = datetime.now()
                     timedelta = self.timestamp - self.timestamp
-                    print(angle_diff, radian_diff, self.turn_duration)
+                    print(angle_diff, self.target_x, self.target_y)
                     patrol_state = "PERFORM_TURN"
 
                 if patrol_state == "PERFORM_TURN":
                     cmd_msg.angular.z = self.turn_speed
                     if timedelta.total_seconds() >= self.turn_duration:
                         self.timestamp = datetime.now()
+                        timedelta = self.timestamp - self.timestamp
                         patrol_state = "MOVE_TOWARDS"
 
                 if patrol_state == "MOVE_TOWARDS":
@@ -120,6 +130,11 @@ class Patroller:
                         self.target_x = self.target_y = self.target_direction = None
                         curr_state = "AWAIT"
                         patrol_state = "START"
+                    if timedelta.total_seconds() >= 0.5:
+                        curr_state = "PATROL"
+                        patrol_state = "START"
+
+
 
             # if self.laserscan_msg:
             #     ranges = numpy.array(self.laserscan_msg.ranges)
