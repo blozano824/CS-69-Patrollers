@@ -2,8 +2,8 @@ from datetime import datetime
 from math import sqrt
 
 
-class Node():
-    """A node class for A* Pathfinding"""
+class Node(object):
+    """A node class for A* path finding"""
 
     def __init__(self, parent=None, vertex=None):
         self.parent = parent
@@ -18,6 +18,8 @@ class Node():
 
 
 class Vertex(object):
+    """A Vertex class for designated locations in a graph"""
+
     def __init__(self, vertex_name, x, y):
         self.vertex_name = vertex_name
         self.x = x
@@ -33,6 +35,8 @@ class Vertex(object):
 
 
 class Edge(object):
+    """An Edge class for designated paths in a graph"""
+
     def __init__(self, start_vertex, end_vertex):
         self.start_vertex = start_vertex
         self.end_vertex = end_vertex
@@ -47,12 +51,18 @@ class Edge(object):
 
 
 class Graph(object):
+    """
+    A Graph class for designated paths and location in a map
+    """
 
     def __init__(self):
         self.__vertex_dict = {}
         self.__edge_dict = {}
 
     def load_from_file(self, file_name):
+        """
+        Loads edges and vertices of a graph from a text file
+        """
         with open(file_name) as file:
             line = file.readline()
             while line:
@@ -100,6 +110,10 @@ class Graph(object):
         self.__edge_dict[str((start_vertex, end_vertex))] = edge_obj
 
     def set_edge_distances(self):
+        """
+        Modifies existing Edge objects by setting the
+        distance between the start vertex and end vertex.
+        """
         for edge in self.__edge_dict.values():
             start_vertex_obj = self.__vertex_dict[edge.start_vertex]
             end_vertex_obj = self.__vertex_dict[edge.end_vertex]
@@ -131,7 +145,7 @@ class Graph(object):
         # Add the start node
         open_list.append(start_node)
 
-        # Loop until you find the end
+        # Loop until you find the end node
         while len(open_list) > 0:
 
             # Get the current node
@@ -142,11 +156,11 @@ class Graph(object):
                     current_node = item
                     current_index = index
 
-            # Pop current off open list, add to closed list
+            # Pop current off open list and add to closed list
             open_list.pop(current_index)
             closed_list.append(current_node)
 
-            # Found the goal
+            # Found the end node
             if current_node == end_node:
                 path = []
                 current = current_node
