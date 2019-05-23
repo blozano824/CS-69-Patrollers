@@ -26,6 +26,8 @@ class Vertex(object):
         self.y = y
         self.timer = datetime.now()
         self.neighbors = []
+        self.occupied = False
+        self.occupied_by = None
 
     def add_neighbor(self, other_vertex):
         self.neighbors.append(other_vertex)
@@ -42,6 +44,7 @@ class Edge(object):
         self.end_vertex = end_vertex
         self.distance = None
         self.occupied = False
+        self.occupied_by = None
 
     def __repr__(self):
         return "<Edge_obj: " + self.start_vertex + "->" + self.end_vertex + ">"
@@ -119,6 +122,28 @@ class Graph(object):
             end_vertex_obj = self.__vertex_dict[edge.end_vertex]
             distance = sqrt((start_vertex_obj.x - end_vertex_obj.x) ** 2 + (start_vertex_obj.y - end_vertex_obj.y) ** 2)
             edge.distance = distance
+
+    def set_vertex_occupied_state(self, vertex, state, robot_name):
+        """
+        Modifies existing Vertex objects by setting the
+        occupied boolean to a specified state (True or False)
+        """
+        if vertex in self.__vertex_dict:
+            vertex_obj = self.__vertex_dict[vertex]
+            vertex_obj.occupied = state
+            vertex_obj.occupied_by = robot_name
+            self.__vertex_dict[vertex] = vertex_obj
+
+    def set_edge_occupied_state(self, edge, state, robot_name):
+        """
+        Modifies existing Edge objects by setting the
+        occupied boolean to a specified state (True or False)
+        """
+        if edge in self.__edge_dict:
+            edge_obj = self.__edge_dict[edge]
+            edge_obj.occupied = state
+            edge_obj.occupied_by = robot_name
+            self.__edge_dict[edge] = edge_obj
 
     def __str__(self):
         res = "vertices:"

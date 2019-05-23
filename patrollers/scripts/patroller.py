@@ -22,6 +22,7 @@ class Patroller:
     """
     def __init__(self):
         self.cmd_vel_publisher = rospy.Publisher("cmd_vel", Twist, queue_size=10)
+        self.current_vertex_publisher = rospy.Publisher("current_vertex", String, queue_size=10)
         self.laserscan_msg = None
         self.odometry_msg = None
         self.searching = True
@@ -31,12 +32,14 @@ class Patroller:
         self.move_speed = 1
 
         # Position Variables
+        self.current_vertex = None
         self.current_x = None
         self.current_y = None
         self.current_direction = None
 
         # Target Position Variables
         self.target_error = 0.1
+        self.target_vertex = None
         self.target_x = None
         self.target_y = None
         self.target_direction = None
@@ -64,10 +67,10 @@ class Patroller:
     def store_incoming_laserscan_msg(self, laserscan_msg):
         self.laserscan_msg = laserscan_msg
 
-    def store_incoming_target_msg(self, target_msg):
-        target_location = target_msg.data.split(",")
-        self.target_x, self.target_y = float(target_location[0]), float(target_location[1])
-        print(self.target_x, self.target_y)
+    def store_incoming_target_vertex_msg(self, target_vertex_msg):
+        target_info = target_vertex_msg.data.split(",")
+        self.current_vertex, self.target_vertex, self.target_x, self.target_y = target_info[0], target_info[1], float(target_info[2]), float(target_info[3])
+        print(self.target_vertex, self.target_x, self.target_y)
         self.target_direction = math.atan2(self.target_y - self.current_y, self.target_x - self.current_x) * 180 / math.pi
         if self.target_direction < 0:
             self.target_direction = 360 + self.target_direction
@@ -75,7 +78,7 @@ class Patroller:
     def subscribe(self):
         rospy.Subscriber("base_pose_ground_truth", Odometry, self.store_incoming_odometry_msg, queue_size=1)
         rospy.Subscriber("base_scan", LaserScan, self.store_incoming_laserscan_msg, queue_size=1)
-        rospy.Subscriber("target", String, self.store_incoming_target_msg, queue_size=1)
+        rospy.Subscriber("target_vertex", String, self.store_incoming_target_vertex_msg, queue_size=1)
 
     def is_near_target(self, current_val, target_val):
         return abs(current_val - target_val) < self.target_error
@@ -99,7 +102,6 @@ class Patroller:
                     patrol_state = "CALCULATE_TURN_TIME"
 
                 if patrol_state == "CALCULATE_TURN_TIME":
-                    # TODO Calculate angle difference between current position and target position
                     angle_diff = self.target_direction - self.current_direction
                     if angle_diff > 180:
                         angle_diff = -1 * (360 - angle_diff)
@@ -127,7 +129,12 @@ class Patroller:
                 if patrol_state == "MOVE_TOWARDS":
                     cmd_msg.linear.x = self.move_speed
                     if self.is_near_target(self.current_x, self.target_x) and self.is_near_target(self.current_y, self.target_y):
-                        self.target_x = self.target_y = self.target_direction = None
+
+                        current_vertex_msg = String()
+                        current_vertex_msg.data = self.current_vertex + "," + self.target_vertex + "," + str(self.target_x) + "," + str(self.target_y)
+                        self.current_vertex_publisher.publish(current_vertex_msg)
+
+                        self.current_vertex = self.target_vertex = self.target_x = self.target_y = self.target_direction = None
                         curr_state = "AWAIT"
                         patrol_state = "START"
                     if timedelta.total_seconds() >= 0.5:
