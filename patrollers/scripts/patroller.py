@@ -21,8 +21,9 @@ class Patroller:
 
     """
     def __init__(self):
+        self.robot_name = rospy.get_namespace().replace("/", "")
         self.cmd_vel_publisher = rospy.Publisher("cmd_vel", Twist, queue_size=10)
-        self.current_vertex_publisher = rospy.Publisher("current_vertex", String, queue_size=10)
+        self.current_vertex_publisher = rospy.Publisher("/current_vertex", String, queue_size=10)
         self.laserscan_msg = None
         self.odometry_msg = None
         self.searching = True
@@ -38,7 +39,7 @@ class Patroller:
         self.current_direction = None
 
         # Target Position Variables
-        self.target_error = 0.1
+        self.target_error = 0.3
         self.target_vertex = None
         self.target_x = None
         self.target_y = None
@@ -70,7 +71,7 @@ class Patroller:
     def store_incoming_target_vertex_msg(self, target_vertex_msg):
         target_info = target_vertex_msg.data.split(",")
         self.current_vertex, self.target_vertex, self.target_x, self.target_y = target_info[0], target_info[1], float(target_info[2]), float(target_info[3])
-        print(self.target_vertex, self.target_x, self.target_y)
+        # print(self.target_vertex, self.target_x, self.target_y)
         self.target_direction = math.atan2(self.target_y - self.current_y, self.target_x - self.current_x) * 180 / math.pi
         if self.target_direction < 0:
             self.target_direction = 360 + self.target_direction
@@ -91,7 +92,7 @@ class Patroller:
             cmd_msg = Twist()
 
             if curr_state == "AWAIT":
-                if self.target_direction:
+                if type(self.target_direction) is float:
                     curr_state = "PATROL"
                     patrol_state = "START"
 
@@ -116,7 +117,7 @@ class Patroller:
 
                     self.timestamp = datetime.now()
                     timedelta = self.timestamp - self.timestamp
-                    print(angle_diff, self.target_x, self.target_y)
+                    # print(angle_diff, self.target_x, self.target_y)
                     patrol_state = "PERFORM_TURN"
 
                 if patrol_state == "PERFORM_TURN":
@@ -131,7 +132,7 @@ class Patroller:
                     if self.is_near_target(self.current_x, self.target_x) and self.is_near_target(self.current_y, self.target_y):
 
                         current_vertex_msg = String()
-                        current_vertex_msg.data = self.current_vertex + "," + self.target_vertex + "," + str(self.target_x) + "," + str(self.target_y)
+                        current_vertex_msg.data = self.robot_name + "," + self.current_vertex + "," + self.target_vertex + "," + str(self.target_x) + "," + str(self.target_y)
                         self.current_vertex_publisher.publish(current_vertex_msg)
 
                         self.current_vertex = self.target_vertex = self.target_x = self.target_y = self.target_direction = None
